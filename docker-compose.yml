@@ -13,3 +13,14 @@ services:
       context: .
       dockerfile: OrderApi/Dockerfile
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+    - "15673:15672"
+
+  customerapi:
+    image: ${DOCKER_REGISTRY-}customerapi
+    build:
+      context: .
+      dockerfile: CustomerApi/Dockerfile
+

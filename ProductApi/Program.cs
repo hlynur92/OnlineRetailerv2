@@ -8,9 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // RabbitMQ connection string (I use CloudAMQP as a RabbitMQ server).
 // Remember to replace this connectionstring with your own.
-string cloudAMQPConnectionString =
-    "host=hare.rmq.cloudamqp.com;virtualHost=npaprqop;username=npaprqop;password=type your password here";
+//  string cloudAMQPConnectionString = "host=hare.rmq.cloudamqp.com;virtualHost=npaprqop;username=npaprqop;password=type your password here";
 
+string cloudAMQPConnectionString = "host=rabbitmq";
 // Add services to the container.
 
 builder.Services.AddDbContext<ProductApiContext>(opt => opt.UseInMemoryDatabase("ProductsDb"));
