@@ -61,12 +61,16 @@ namespace OrderApi.Controllers
             CustomerDto customer;
             try {
                 if(order.customerId != null) customer = customerServiceGateway.Get(order.customerId ?? 0);
-                else return StatusCode(500, "customerId is required");
+                else return StatusCode(403, "customerId is required");
             } catch (Exception) {
                 // If the customer does not exist.
-                return StatusCode(500, "Customer does not exist");
+                return StatusCode(403, "Customer does not exist");
             }
-
+            //check for bad credit standing (any orders where status is not paid or cancelled)
+            if(!repository.GetByCustomer(customer.Id).All(order => order.Status == Order.OrderStatus.paid || order.Status == Order.OrderStatus.cancelled))
+            {
+                return StatusCode(403, "Customer has 1 or more orders that have not yet been paid for");
+            }
 
             if (ProductItemsAvailable(order))
             {
@@ -107,6 +111,7 @@ namespace OrderApi.Controllers
             }
             return true;
         }
+
 
 
         // PUT orders/5/cancel
