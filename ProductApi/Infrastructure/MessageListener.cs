@@ -26,6 +26,32 @@ namespace ProductApi.Infrastructure
 
         public void Start()
         {
+            using (var bus = RabbitHutch.CreateBus(connectionString))
+            {
+                bus.PubSub.Subscribe<OrderStatusChangedMessage>("productApiHkCompleted",
+                    HandleOrderCompleted, x => x.WithTopic("completed"));
+
+                // Add code to subscribe to other OrderStatusChanged events:
+                // * cancelled
+                // * shipped
+                // * paid
+                // Implement an event handler for each of these events.
+                // Be careful that each subscribe has a unique subscription id
+                // (this is the first parameter to the Subscribe method). If they
+                // get the same subscription id, they will listen on the same
+                // queue.
+
+                // Block the thread so that it will not exit and stop subscribing.
+                lock (this)
+                {
+                    Monitor.Wait(this);
+                }
+            }
+        }
+
+        /*
+        public void Start()
+        {
             using (bus = RabbitHutch.CreateBus(connectionString))
             {
                 bus.PubSub.Subscribe<OrderCreatedMessage>("productApiHkCreated", 
@@ -38,8 +64,30 @@ namespace ProductApi.Infrastructure
                 }
             }
 
+        }*/
+
+        private void HandleOrderCompleted(OrderStatusChangedMessage message)
+        {
+            // A service scope is created to get an instance of the product repository.
+            // When the service scope is disposed, the product repository instance will
+            // also be disposed.
+            using (var scope = provider.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var productRepos = services.GetService<IRepository<Product>>();
+
+                // Reserve items of ordered product (should be a single transaction).
+                // Beware that this operation is not idempotent.
+                foreach (var orderLine in message.OrderLines)
+                {
+                    var product = productRepos.Get(orderLine.ProductId);
+                    product.ItemsReserved += orderLine.Quantity;
+                    productRepos.Edit(product);
+                }
+            }
         }
 
+        /*
         private void HandleOrderCreated(OrderCreatedMessage message)
         {
             Console.WriteLine("received and handling OrderCreatedMessage");
@@ -84,6 +132,7 @@ namespace ProductApi.Infrastructure
             Console.WriteLine("Doen handling OrderCreatedMessage");
         }
 
+        // Moved to Order Controller
         private bool ProductItemsAvailable(IList<OrderLine> orderLines, IRepository<Product> productRepos)
         {
             foreach (var orderLine in orderLines)
@@ -95,8 +144,6 @@ namespace ProductApi.Infrastructure
                 }
             }
             return true;
-        }
-
-
+        }*/
     }
 }

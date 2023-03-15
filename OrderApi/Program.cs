@@ -5,11 +5,20 @@ using SharedModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Base URL for the product service when the solution is executed using docker-compose.
+// The product service (running as a container) listens on this URL for HTTP requests
+// from other services specified in the docker compose file (which in this solution is
+// the order service).
+string productServiceBaseUrl = "http://productapi/products/";
+
 // RabbitMQ connection string (I use CloudAMQP as a RabbitMQ server).
 // Remember to replace this connectionstring with your own.
 //string cloudAMQPConnectionString = "host=hare.rmq.cloudamqp.com;virtualHost=npaprqop;username=npaprqop;password=type your password here";
 
+// Use this connection string if you want to run RabbitMQ server as a container
+// (see docker-compose.yml)
 string cloudAMQPConnectionString = "host=rabbitmq";
+
 // Add services to the container.
 
 builder.Services.AddDbContext<OrderApiContext>(opt => opt.UseInMemoryDatabase("OrdersDb"));
@@ -19,6 +28,10 @@ builder.Services.AddScoped<IRepository<Order>, OrderRepository>();
 
 // Register database initializer for dependency injection
 builder.Services.AddTransient<IDbInitializer, DbInitializer>();
+
+// Register product service gateway for dependency injection
+builder.Services.AddSingleton<IServiceGateway<ProductDto>>(new
+    ProductServiceGateway(productServiceBaseUrl));
 
 // Register MessagePublisher (a messaging gateway) for dependency injection
 builder.Services.AddSingleton<IMessagePublisher>(new

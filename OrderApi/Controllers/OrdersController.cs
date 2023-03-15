@@ -13,12 +13,15 @@ namespace OrderApi.Controllers
     public class OrdersController : ControllerBase
     {
         IOrderRepository repository;
+        IServiceGateway<ProductDto> productServiceGateway;
         IMessagePublisher messagePublisher;
 
         public OrdersController(IRepository<Order> repos,
+            IServiceGateway<ProductDto> gateway,
             IMessagePublisher publisher)
         {
             repository = repos as IOrderRepository;
+            productServiceGateway = gateway;
             messagePublisher = publisher;
         }
 
@@ -43,43 +46,52 @@ namespace OrderApi.Controllers
 
         // POST orders
         [HttpPost]
-        public IActionResult Post([FromBody]Order order)
+        public IActionResult Post([FromBody] Order order)
         {
             if (order == null)
             {
                 return BadRequest();
             }
 
-            try
+            if (ProductItemsAvailable(order))
             {
-                // Create a tentative order.
-                order.Status = Order.OrderStatus.tentative;
-                var newOrder = repository.Add(order);
-
-                // Publish OrderStatusChangedMessage. 
-                messagePublisher.PublishOrderCreatedMessage(
-                    newOrder.customerId, newOrder.Id, newOrder.OrderLines);
-                Console.WriteLine("Published OrderCreatedMessage");
-
-                // Wait until order status is "completed"
-                bool completed = false;
-                while (!completed)
+                try
                 {
-                    var tentativeOrder = repository.Get(newOrder.Id);
-                    if (tentativeOrder.Status == Order.OrderStatus.completed)
-                        completed = true;
-                    Thread.Sleep(100);
+                    // Publish OrderStatusChangedMessage. If this operation
+                    // fails, the order will not be created
+                    messagePublisher.PublishOrderStatusChangedMessage(
+                        order.customerId, order.OrderLines, "completed");
+
+                    // Create order.
+                    order.Status = Order.OrderStatus.completed;
+                    var newOrder = repository.Add(order);
+                    return CreatedAtRoute("GetOrder", new { id = newOrder.Id }, newOrder);
                 }
-
-                return CreatedAtRoute("GetOrder", new { id = newOrder.Id }, newOrder);
+                catch
+                {
+                    return StatusCode(500, "An error happened. Try again.");
+                }
             }
-            catch
+            else
             {
-                return StatusCode(500, "An error happened. Try again.");
+                // If there are not enough product items available.
+                return StatusCode(500, "Not enough items in stock.");
             }
-
         }
 
+        private bool ProductItemsAvailable(Order order)
+        {
+            foreach (var orderLine in order.OrderLines)
+            {
+                // Call product service to get the product ordered.
+                var orderedProduct = productServiceGateway.Get(orderLine.ProductId);
+                if (orderLine.Quantity > orderedProduct.ItemsInStock - orderedProduct.ItemsReserved)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         // PUT orders/5/cancel
         // This action method cancels an order and publishes an OrderStatusChangedMessage
