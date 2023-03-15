@@ -5,11 +5,11 @@ using CustomerApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 // RabbitMQ connection string (I use CloudAMQP as a RabbitMQ server).
 // Remember to replace this connectionstring with your own.
-string cloudAMQPConnectionString = "host=localhost;persistentMessages=false";
+//string cloudAMQPConnectionString = "host=localhost;persistentMessages=false";
 
 // Use this connection string if you want to run RabbitMQ server as a container
 // (see docker-compose.yml)
-//string cloudAMQPConnectionString = "host=rabbitmq";
+string cloudAMQPConnectionString = "host=rabbitmq";
 
 // Add services to the container.
 

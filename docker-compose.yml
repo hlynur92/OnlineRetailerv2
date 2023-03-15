@@ -6,12 +6,16 @@ services:
     build:
       context: .
       dockerfile: ProductApi/Dockerfile
+    depends_on:
+      - rabbitmq
 
   orderapi:
     image: ${DOCKER_REGISTRY-}orderapi
     build:
       context: .
       dockerfile: OrderApi/Dockerfile
+    depends_on:
+      - rabbitmq
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -23,4 +27,6 @@ services:
     build:
       context: .
       dockerfile: CustomerApi/Dockerfile
+    depends_on:
+      - rabbitmq
 

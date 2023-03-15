@@ -42,6 +42,7 @@ namespace ProductApi.Infrastructure
 
         private void HandleOrderCreated(OrderCreatedMessage message)
         {
+            Console.WriteLine("received and handling OrderCreatedMessage");
             // A service scope is created to get an instance of the product repository.
             // When the service scope is disposed, the product repository instance will
             // also be disposed.
@@ -66,6 +67,7 @@ namespace ProductApi.Infrastructure
                     };
 
                     bus.PubSub.Publish(replyMessage);
+                    Console.WriteLine("Published OrderAcceptedMessage");
                 }
                 else
                 {
@@ -76,8 +78,10 @@ namespace ProductApi.Infrastructure
                     };
 
                     bus.PubSub.Publish(replyMessage);
+                    Console.WriteLine("Published OrderRejectedMessage");
                 }
             }
+            Console.WriteLine("Doen handling OrderCreatedMessage");
         }
 
         private bool ProductItemsAvailable(IList<OrderLine> orderLines, IRepository<Product> productRepos)

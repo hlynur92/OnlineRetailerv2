@@ -59,7 +59,7 @@ namespace OrderApi.Controllers
                 // Publish OrderStatusChangedMessage. 
                 messagePublisher.PublishOrderCreatedMessage(
                     newOrder.customerId, newOrder.Id, newOrder.OrderLines);
-
+                Console.WriteLine("Published OrderCreatedMessage");
 
                 // Wait until order status is "completed"
                 bool completed = false;

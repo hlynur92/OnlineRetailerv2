@@ -43,6 +43,7 @@ namespace OrderApi.Infrastructure
 
         private void HandleOrderAccepted(OrderAcceptedMessage message)
         {
+            Console.WriteLine("received and handling OrderAcceptedMessage");
             using (var scope = provider.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -57,6 +58,7 @@ namespace OrderApi.Infrastructure
 
         private void HandleOrderRejected(OrderRejectedMessage message)
         {
+            Console.WriteLine("received and handling OrderRejectedMessage");
             using (var scope = provider.CreateScope())
             {
                 var services = scope.ServiceProvider;
