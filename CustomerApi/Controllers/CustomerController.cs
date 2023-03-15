@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using CustomerApi.Data;
 using CustomerApi.Models;
 using RestSharp;
+using SharedModels;
 
 namespace CustomerApi.Controllers
 {
@@ -45,10 +46,11 @@ namespace CustomerApi.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly IRepository<Customer> repository;
-
-        public CustomerController(IRepository<Customer> repos)
+        private readonly IConverter<Customer, CustomerDto> customerConverter;
+        public CustomerController(IRepository<Customer> repos, IConverter<Customer, CustomerDto> converter)
         {
             repository = repos;
+            customerConverter = converter;
         }
 
         // GET: customers
@@ -97,6 +99,19 @@ namespace CustomerApi.Controllers
             }
 
             return NoContent();
+        }
+
+        // GET customer/5
+        [HttpGet("{id}", Name = "GetCustomer")]
+        public IActionResult Get(int id)
+        {
+            var item = repository.Get(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+            var customerDto = customerConverter.Convert(item);
+            return new ObjectResult(customerDto);
         }
     }
 }

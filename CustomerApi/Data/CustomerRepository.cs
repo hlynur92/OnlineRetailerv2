@@ -31,7 +31,7 @@ namespace CustomerApi.Data
 
         Customer IRepository<Customer>.Get(int id)
         {
-            return db.Customers.FirstOrDefault(o => o.Id == id);
+            return db.Customers.First(o => o.Id == id);
         }
 
         IEnumerable<Customer> IRepository<Customer>.GetAll()

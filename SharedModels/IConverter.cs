@@ -1,4 +1,4 @@
-﻿namespace ProductApi.Models
+﻿namespace SharedModels
 {
     public interface IConverter<T,U>
     {

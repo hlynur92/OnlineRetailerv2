@@ -4,6 +4,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 using OrderApi.Data;
 using OrderApi.Infrastructure;
+using RestSharp;
 using SharedModels;
 
 namespace OrderApi.Controllers
@@ -14,14 +15,18 @@ namespace OrderApi.Controllers
     {
         IOrderRepository repository;
         IServiceGateway<ProductDto> productServiceGateway;
+        IServiceGateway<CustomerDto> customerServiceGateway;
         IMessagePublisher messagePublisher;
+        
 
         public OrdersController(IRepository<Order> repos,
-            IServiceGateway<ProductDto> gateway,
+            IServiceGateway<ProductDto> pgateway,
+            IServiceGateway<CustomerDto> cgateway,
             IMessagePublisher publisher)
         {
             repository = repos as IOrderRepository;
-            productServiceGateway = gateway;
+            productServiceGateway = pgateway;
+            customerServiceGateway = cgateway;
             messagePublisher = publisher;
         }
 
@@ -52,6 +57,16 @@ namespace OrderApi.Controllers
             {
                 return BadRequest();
             }
+
+            CustomerDto customer;
+            try {
+                if(order.customerId != null) customer = customerServiceGateway.Get(order.customerId ?? 0);
+                else return StatusCode(500, "customerId is required");
+            } catch (Exception) {
+                // If the customer does not exist.
+                return StatusCode(500, "Customer does not exist");
+            }
+
 
             if (ProductItemsAvailable(order))
             {
@@ -92,6 +107,7 @@ namespace OrderApi.Controllers
             }
             return true;
         }
+
 
         // PUT orders/5/cancel
         // This action method cancels an order and publishes an OrderStatusChangedMessage

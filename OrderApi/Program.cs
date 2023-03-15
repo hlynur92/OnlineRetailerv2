@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // from other services specified in the docker compose file (which in this solution is
 // the order service).
 string productServiceBaseUrl = "http://productapi/products/";
-
+string customerServiceBaseUrl = "http://customerapi/customer/";
 // RabbitMQ connection string (I use CloudAMQP as a RabbitMQ server).
 // Remember to replace this connectionstring with your own.
 //string cloudAMQPConnectionString = "host=hare.rmq.cloudamqp.com;virtualHost=npaprqop;username=npaprqop;password=type your password here";
@@ -32,6 +32,10 @@ builder.Services.AddTransient<IDbInitializer, DbInitializer>();
 // Register product service gateway for dependency injection
 builder.Services.AddSingleton<IServiceGateway<ProductDto>>(new
     ProductServiceGateway(productServiceBaseUrl));
+
+// Register customer service gateway for dependency injection
+builder.Services.AddSingleton<IServiceGateway<CustomerDto>>(new
+    CustomerServiceGateway(customerServiceBaseUrl));
 
 // Register MessagePublisher (a messaging gateway) for dependency injection
 builder.Services.AddSingleton<IMessagePublisher>(new
