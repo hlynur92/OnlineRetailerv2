@@ -115,9 +115,15 @@ namespace OrderApi.Controllers
         [HttpPut("{id}/cancel")]
         public IActionResult Cancel(int id)
         {
-            throw new NotImplementedException();
+            var order = repository.Get(id);
+            messagePublisher.PublishOrderStatusChangedMessage(
+                order.customerId, order.OrderLines, "cancelled");
 
-            // Add code to implement this method.
+
+            // Edit order.
+            order.Status = Order.OrderStatus.cancelled;
+            repository.Edit(order);
+            return StatusCode(200, "Order Cancelled");
         }
 
         // PUT orders/5/ship
@@ -126,9 +132,15 @@ namespace OrderApi.Controllers
         [HttpPut("{id}/ship")]
         public IActionResult Ship(int id)
         {
-            throw new NotImplementedException();
+            var order = repository.Get(id);
+            messagePublisher.PublishOrderStatusChangedMessage(
+                order.customerId, order.OrderLines, "shipped");
 
-            // Add code to implement this method.
+
+            // Edit order.
+            order.Status = Order.OrderStatus.cancelled;
+            repository.Edit(order);
+            return StatusCode(200, "Order Shipped");
         }
 
         // PUT orders/5/pay
@@ -137,10 +149,19 @@ namespace OrderApi.Controllers
         [HttpPut("{id}/pay")]
         public IActionResult Pay(int id)
         {
+            /*
+            var order = repository.Get(id);
+            messagePublisher.CreditStandingChangedMessage(
+                order.customerId, order.OrderLines, "paid");
+
+
+            // Edit order.
+            order.Status = Order.OrderStatus.cancelled;
+            repository.Edit(order);
+            return StatusCode(200, "Order Paid");
+            */
+
             throw new NotImplementedException();
-
-            // Add code to implement this method.
         }
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using EasyNetQ;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ProductApi.Data;
 using ProductApi.Models;
 using SharedModels;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProductApi.Infrastructure
 {
@@ -31,6 +33,12 @@ namespace ProductApi.Infrastructure
                 bus.PubSub.Subscribe<OrderStatusChangedMessage>("productApiHkCompleted",
                     HandleOrderCompleted, x => x.WithTopic("completed"));
 
+                bus.PubSub.Subscribe<OrderStatusChangedMessage>("productApiHkCancelled",
+                    HandleOrderCanceled, x => x.WithTopic("cancelled"));
+
+                bus.PubSub.Subscribe<OrderStatusChangedMessage>("productApiHkShipped",
+                    HandleOrderShipped, x => x.WithTopic("shipped"));
+
                 // Add code to subscribe to other OrderStatusChanged events:
                 // * cancelled
                 // * shipped
@@ -49,22 +57,41 @@ namespace ProductApi.Infrastructure
             }
         }
 
-        /*
-        public void Start()
+        private void HandleOrderShipped(OrderStatusChangedMessage message)
         {
-            using (bus = RabbitHutch.CreateBus(connectionString))
-            {
-                bus.PubSub.Subscribe<OrderCreatedMessage>("productApiHkCreated", 
-                    HandleOrderCreated);
+            //when the ordered items are shipped, the reservations are removed,
+            //and the number of items in stock are decremented for each ordered product.
 
-                // Block the thread so that it will not exit and stop subscribing.
-                lock (this)
+            using (var scope = provider.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var productRepos = services.GetService<IRepository<Product>>();
+
+                foreach (var orderLine in message.OrderLines)
                 {
-                    Monitor.Wait(this);
+                    var product = productRepos.Get(orderLine.ProductId);
+                    product.ItemsReserved += orderLine.Quantity;
+                    product.ItemsInStock -= orderLine.Quantity;
+                    productRepos.Edit(product);
                 }
             }
+        }
 
-        }*/
+        private void HandleOrderCanceled(OrderStatusChangedMessage message)
+        {
+            using (var scope = provider.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var productRepos = services.GetService<IRepository<Product>>();
+
+                foreach (var orderLine in message.OrderLines)
+                {
+                    var product = productRepos.Get(orderLine.ProductId);
+                    product.ItemsReserved -= orderLine.Quantity;
+                    productRepos.Edit(product);
+                }
+            }
+        }
 
         private void HandleOrderCompleted(OrderStatusChangedMessage message)
         {
@@ -86,6 +113,23 @@ namespace ProductApi.Infrastructure
                 }
             }
         }
+
+        /*
+        public void Start()
+        {
+            using (bus = RabbitHutch.CreateBus(connectionString))
+            {
+                bus.PubSub.Subscribe<OrderCreatedMessage>("productApiHkCreated", 
+                    HandleOrderCreated);
+
+                // Block the thread so that it will not exit and stop subscribing.
+                lock (this)
+                {
+                    Monitor.Wait(this);
+                }
+            }
+
+        }*/
 
         /*
         private void HandleOrderCreated(OrderCreatedMessage message)
