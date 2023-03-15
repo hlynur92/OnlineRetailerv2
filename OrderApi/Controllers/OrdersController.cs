@@ -143,7 +143,7 @@ namespace OrderApi.Controllers
 
 
             // Edit order.
-            order.Status = Order.OrderStatus.cancelled;
+            order.Status = Order.OrderStatus.shipped;
             repository.Edit(order);
             return StatusCode(200, "Order Shipped");
         }
@@ -154,19 +154,15 @@ namespace OrderApi.Controllers
         [HttpPut("{id}/pay")]
         public IActionResult Pay(int id)
         {
-            /*
             var order = repository.Get(id);
-            messagePublisher.CreditStandingChangedMessage(
-                order.customerId, order.OrderLines, "paid");
+            //messagePublisher.PublishOrderStatusChangedMessage(
+              //  order.customerId, order.OrderLines, "paid");
 
 
             // Edit order.
-            order.Status = Order.OrderStatus.cancelled;
+            order.Status = Order.OrderStatus.paid;
             repository.Edit(order);
             return StatusCode(200, "Order Paid");
-            */
-
-            throw new NotImplementedException();
         }
     }
 }
