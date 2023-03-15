@@ -49,6 +49,17 @@ namespace OrderApi.Controllers
             return new ObjectResult(item);
         }
 
+        [HttpGet("Customer/{id}", Name = "GetAllCustomerOrders")]
+        public IActionResult GetAllCustomerOrders(int id)
+        {
+            var orders = repository.GetByCustomer(id);
+            if (orders == null)
+            {
+                return NotFound();
+            }
+            return new ObjectResult(orders);
+        }
+
         // POST orders
         [HttpPost]
         public IActionResult Post([FromBody] Order order)
@@ -121,14 +132,21 @@ namespace OrderApi.Controllers
         public IActionResult Cancel(int id)
         {
             var order = repository.Get(id);
-            messagePublisher.PublishOrderStatusChangedMessage(
-                order.customerId, order.OrderLines, "cancelled");
+            if (order.Status != Order.OrderStatus.shipped)
+            {
+                messagePublisher.PublishOrderStatusChangedMessage(
+                    order.customerId, order.OrderLines, "cancelled");
 
+                // Edit order.
+                order.Status = Order.OrderStatus.cancelled;
+                repository.Edit(order);
+                return StatusCode(200, "Order Cancelled");
+            }
+            else 
+            {
+                return StatusCode(500, "Order has already been shipped.");
+            }
 
-            // Edit order.
-            order.Status = Order.OrderStatus.cancelled;
-            repository.Edit(order);
-            return StatusCode(200, "Order Cancelled");
         }
 
         // PUT orders/5/ship
